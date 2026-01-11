@@ -9,7 +9,7 @@ function App() {
       <Navbar />
       <main>
         <Hero />
-        <div className="h-16"></div>
+        {/* You can add more sections here later */}
       </main>
       <Footer />
     </div>

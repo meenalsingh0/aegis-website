@@ -1,262 +1,167 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Shield, Cpu, Lock, Zap, Sparkles, CheckCircle } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Cpu, Lock } from 'lucide-react';
 import aegisLogo from '../assets/aegis-logo.jpg';
 
-const missionPoints = [
-  {
-    title: 'Learn by doing',
-    description: 'Hands-on workshops and real-world scenarios to build practical cybersecurity skills.',
-    icon: Shield
-  },
-  {
-    title: 'Build a strong community',
-    description: 'Collaborative environment fostering teamwork, knowledge sharing, and peer learning.',
-    icon: Cpu
-  },
-  {
-    title: 'Think like defenders',
-    description: 'Develop critical thinking and problem-solving skills essential for cybersecurity professionals.',
-    icon: Lock
-  },
-  {
-    title: 'Prepare for the real world',
-    description: 'Exposure to industry practices, tools, and challenges to bridge the gap between academics and professional cybersecurity.',
-    icon: Zap
-  }
-];
-
-const statsData = [
-  { label: 'Active Members', target: 150, suffix: '+' },
-  { label: 'Major Events', target: 42, suffix: '' },
-  { label: 'Workshops Hosted', target: 89, suffix: '+' },
-  { label: 'Challenge Hours Logged', target: 2400, suffix: '+' }
-];
-
 const Hero = () => {
-  const canvasRef = useRef(null);
-  const statsRef = useRef(null);
-  const intervalRef = useRef(null);
-  const hasAnimatedRef = useRef(false);
-  const [counts, setCounts] = useState(() => statsData.map(() => 0));
+  const statusRef = useRef(null);
+  const [statusIndex, setStatusIndex] = useState(0);
 
-  // Particle animation
+  const statusMessages = [
+    "System Status: ONLINE...",
+    "Scanning for threats...",
+    "Aegis Protocol: ACTIVE",
+    "Firewall: ENGAGED",
+    "Encryption: 256-BIT ACTIVE"
+  ];
+
+  // Typing effect
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const element = statusRef.current;
+    if (!element) return;
 
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    const text = statusMessages[statusIndex];
+    let charIndex = 0;
+    let isDeleting = false;
+    let timeout;
 
-    const particles = [];
-    const particleCount = 100;
-
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 0.5;
-        this.speedX = Math.random() * 0.5 - 0.25;
-        this.speedY = Math.random() * 0.5 - 0.25;
-        this.color = Math.random() > 0.5 ? '#00D4FF' : '#9D4EDD';
+    function type() {
+      const currentText = text;
+      
+      if (isDeleting) {
+        element.textContent = currentText.substring(0, charIndex - 1);
+        charIndex--;
+      } else {
+        element.textContent = currentText.substring(0, charIndex + 1);
+        charIndex++;
       }
 
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
+      let speed = isDeleting ? 50 : 100;
 
-        if (this.x > canvas.width) this.x = 0;
-        else if (this.x < 0) this.x = canvas.width;
-        if (this.y > canvas.height) this.y = 0;
-        else if (this.y < 0) this.y = canvas.height;
+      if (!isDeleting && charIndex === currentText.length) {
+        speed = 2000;
+        isDeleting = true;
+      } else if (isDeleting && charIndex === 0) {
+        isDeleting = false;
+        setStatusIndex((prev) => (prev + 1) % statusMessages.length);
+        speed = 500;
       }
 
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      timeout = setTimeout(type, speed);
     }
 
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
-    }
+    type();
 
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-      });
-      requestAnimationFrame(animate);
-    }
+    return () => clearTimeout(timeout);
+  }, [statusIndex]);
 
-    animate();
-
-    const handleResize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Counter animation
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting || hasAnimatedRef.current) return;
-
-        hasAnimatedRef.current = true;
-        intervalRef.current = window.setInterval(() => {
-          setCounts((prev) => {
-            const next = prev.map((count, index) => {
-              const target = statsData[index].target;
-              if (count >= target) return target;
-              const step = Math.ceil(target / 50);
-              const updated = count + step;
-              return updated >= target ? target : updated;
-            });
-
-            const complete = next.every((value, index) => value >= statsData[index].target);
-            if (complete && intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-
-            return next;
-          });
-        }, 30);
-      },
-      { threshold: 0.5 }
-    );
-
-    const statsElement = statsRef.current;
-    if (statsElement) observer.observe(statsElement);
-
-    return () => {
-      if (statsElement) observer.unobserve(statsElement);
-      observer.disconnect();
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, []);
+  const stats = [
+    { value: "50+", label: "Events Hosted", icon: <Zap className="w-4 h-4" /> },
+    { value: "2k+", label: "Community", icon: <Shield className="w-4 h-4" /> },
+    { value: "100%", label: "Student Run", icon: <Cpu className="w-4 h-4" /> },
+    { value: "24/7", label: "Active", icon: <Lock className="w-4 h-4" /> },
+  ];
 
   return (
-    <section className="relative min-h-screen pt-24 overflow-hidden">
-      {/* Animated Particles */}
-      <canvas ref={canvasRef} className="absolute inset-0 opacity-30" />
+    <section className="relative min-h-screen overflow-hidden pt-20">
+      {/* CRT Scanline */}
+      <div className="scanline-overlay"></div>
 
-      {/* Hex Grid Background */}
-      <div className="absolute inset-0 hex-grid opacity-10" />
+      {/* Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `linear-gradient(to right, #1a1a1a 1px, transparent 1px), linear-gradient(to bottom, #1a1a1a 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}
+      ></div>
 
-      {/* Gradient Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-[#00D4FF]/20 to-[#9D4EDD]/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-[#00FF88]/20 to-[#00D4FF]/20 rounded-full blur-3xl" />
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-6xl mx-auto py-20">
-          {/* Main Content */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1A1A23]/50 border border-[#2A2A33] mb-8 animate-fade-in">
-              <Sparkles className="w-4 h-4 text-[#00D4FF]" />
-              <span className="text-sm font-mono text-[#00D4FF]">CYBER DEFENSE ACTIVE</span>
-            </div>
-
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold font-space mb-6">
-              <span className="gradient-text">AEGIS SRM-IST</span>
-            </h1>
-
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-10">
-              AEGIS at SRM is a student-run cybersecurity club built on hands-on experience.
-With history of successfully organizing hackathons, Capture-the-Flag competitions, and technical workshops—creating an environment where students learn by doing and grow through real-world challenges.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
-              <button className="group relative px-8 py-4 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#9D4EDD] text-white font-semibold text-lg hover:shadow-xl hover:shadow-[#00D4FF]/20 transition-all duration-300">
-                <span className="relative z-10 flex items-center gap-2">
-                  Explore Events
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-                </span>
-                <div className="absolute inset-0 rounded-xl bg-white/0 group-hover:bg-white/10 transition-colors duration-300" />
-              </button>
-              <button className="px-8 py-4 rounded-xl border-2 border-[#1A1A23] text-gray-300 font-semibold text-lg hover:border-[#00D4FF] hover:text-white transition-all duration-300">
-                Join Us
-              </button>
-            </div>  
-          </div>
-
-          {/* Mission Section  */}
-          <div className="mb-16 justify-center text-center">
-            <h3 className="font-bold text-4xl lg:text-6xl font-space mb-6">
-              <span className="gradient-text">OUR MISSION</span>
-            </h3>
-          </div>
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
-            {/* Left Side - Image */}
-            <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden border border-[#2A2A33] group">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#00D4FF]/20 to-[#9D4EDD]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-80 md:h-96 bg-gradient-to-br from-[#0A0A0F] to-[#1A1A23] flex items-center justify-center p-8">
-                  {/* AEGIS Logo */}
-                  <img 
-                    src={aegisLogo} 
-                    alt="AEGIS Logo" 
-                    className="w-64 h-64 object-contain rounded-lg filter drop-shadow-2xl hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="max-w-6xl mx-auto py-12 sm:py-20">
+          {/* Logo Animation */}
+          <div className="flex justify-center mb-12 sm:mb-16">
+            <div className="relative group">
+              {/* Outer Glow */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-gray-500 to-white rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+              
+              {/* Main Logo Container */}
+              <div className="relative w-48 h-48 sm:w-64 sm:h-64 rounded-full overflow-hidden border-4 border-gray-800 bg-black p-2">
+                <img 
+                  src={aegisLogo} 
+                  alt="AEGIS Logo" 
+                  className="w-full h-full object-cover rounded-full"
+                />
                 
+                {/* Rotating Border Effect */}
+                <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-cyber-neon animate-spin-slow"></div>
               </div>
               
-              {/* Image caption */}
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-500 font-mono">
-                  AEGIS SECURITY MATRIX — ACTIVE PROTECTION
-                </p>
-              </div>
-            </div>
-
-            {/* Right Side - Mission Points */}
-            <div>
-
-              <div className="space-y-6">
-                {missionPoints.map((point) => {
-                  const Icon = point.icon;
-                  return (
-                    <div 
-                      key={point.title}
-                      className="group flex items-start gap-4 p-4 rounded-xl bg-[#1A1A23]/30 border border-[#2A2A33] hover:border-[#00D4FF]/30 transition-all duration-300 hover:scale-[1.02]"
-                    >
-                      <div className="flex-shrink-0">
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-[#00D4FF]/10 to-[#9D4EDD]/10 group-hover:from-[#00D4FF]/20 group-hover:to-[#9D4EDD]/20 transition-all duration-300">
-                          <Icon className="w-6 h-6 text-[#00D4FF]" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[#00D4FF] transition-colors duration-300">
-                          {point.title}
-                        </h3>
-                        <p className="text-gray-400 text-sm">
-                          {point.description}
-                        </p>
-                      </div>
-                      <CheckCircle className="w-5 h-5 text-[#00FF88] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0" />
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Floating Dots */}
+              <div className="absolute -top-2 -left-2 w-3 h-3 bg-cyber-neon rounded-full animate-pulse"></div>
+              <div className="absolute -top-2 -right-2 w-3 h-3 bg-cyber-neon rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+              <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-cyber-neon rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+              <div className="absolute -bottom-2 -right-2 w-3 h-3 bg-cyber-neon rounded-full animate-pulse" style={{animationDelay: '1.5s'}}></div>
             </div>
           </div>
+
+          {/* Main Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-4 glitch-text tracking-tighter text-white" data-text="AEGIS SRM">
+              AEGIS SRM
+            </h1>
+            
+            {/* Status Display */}
+            <div className="inline-flex items-center space-x-3 text-gray-400 font-mono text-sm sm:text-base md:text-lg mb-8 bg-gray-900/50 px-4 py-3 border border-gray-700 rounded-lg backdrop-blur-sm">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span ref={statusRef} className="text-white font-medium">
+                System Status: ONLINE...
+              </span>
+              <div className="w-2 h-4 bg-cyber-neon animate-pulse ml-1"></div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p className="text-gray-400 max-w-2xl mx-auto text-lg sm:text-xl mb-10 text-center leading-relaxed">
+            The Student Run Organization dedicated to{' '}
+            <span className="text-white font-bold">Cybersecurity</span>,{' '}
+            <span className="text-white font-bold">Ethical Hacking</span>, and{' '}
+            <span className="text-white font-bold">Technical Intelligence</span> at SRMIST.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <button className="cyber-btn bg-white text-black font-bold px-8 py-4 text-lg hover:bg-gray-200 transition-all duration-300 group flex items-center justify-center gap-2 hover:scale-105">
+              EXPLORE OPERATIONS
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button className="cyber-btn border-2 border-gray-600 text-gray-400 px-8 py-4 text-lg hover:border-cyber-neon hover:text-white transition-all duration-300 hover:scale-105">
+              DECRYPT INFO
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto border-t border-gray-800 pt-12">
+            {stats.map((stat, index) => (
+              <div 
+                key={index} 
+                className="text-center cyber-card p-6 hover:border-cyber-neon transition-all duration-300 hover:scale-105"
+              >
+                <div className="flex justify-center mb-3">
+                  <div className="p-2 bg-gray-800 rounded-lg">
+                    {stat.icon}
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-white font-mono mb-1">{stat.value}</div>
+                <div className="text-xs text-gray-500 uppercase tracking-widest">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 h-1 data-stream" />
+      {/* Ambient Light Effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyber-neon/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyber-neon/5 rounded-full blur-3xl"></div>
     </section>
   );
 };
